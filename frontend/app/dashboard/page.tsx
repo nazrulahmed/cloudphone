@@ -3,6 +3,8 @@
 import DashboardLayout from '@/components/DashboardLayout';
 import { storage } from '@/lib/storage';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { fetchExtensions } from '@/lib/api';
 import {
   HiHashtag,
   HiClock,
@@ -14,13 +16,27 @@ import {
 
 export default function DashboardPage() {
   const tenant = storage.getTenant();
-  const numbers = storage.getNumbers();
   const subscription = storage.getSubscription();
   const usageStats = storage.getUsageStats();
 
-  const activeNumbers = numbers.filter((n) => n.status === 'active').length;
+  const [activeNumbers, setActiveNumbers] = useState(0);
   const totalCalls = usageStats?.callsPerDay.reduce((sum, day) => sum + day.count, 0) || 0;
   const callQuality = 4.8; // Mock score
+
+  useEffect(() => {
+    // Fetch live active numbers from Sysconfig
+    const loadData = async () => {
+      try {
+        const exts = await fetchExtensions();
+        // Count extensions that have a dedicated number assigned
+        const count = exts.filter((e: any) => e.numberrange_detail_number_cli && !e.extension_uuid.startsWith('flow-')).length;
+        setActiveNumbers(count);
+      } catch (err) {
+        console.error('Failed to fetch extensions metric', err);
+      }
+    };
+    loadData();
+  }, []);
 
   return (
     <DashboardLayout>

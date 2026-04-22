@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useSoftphone } from '@/contexts/SoftphoneContext';
 import {
   HiPhone,
   HiPhoneIncoming,
@@ -9,42 +10,40 @@ import {
   HiPhoneMissedCall,
 } from 'react-icons/hi';
 
-type CallStatus = 'idle' | 'calling' | 'connected' | 'ended';
-
 export default function SoftphonePage() {
+  const { status, registerState, callState, error, sipUsername, connect, disconnect, makeCall, hangup } = useSoftphone();
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [callStatus, setCallStatus] = useState<CallStatus>('idle');
   const [callDuration, setCallDuration] = useState(0);
 
+  // Handle call timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (callState === 'connected') {
+      interval = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setCallDuration(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [callState]);
+
   const handleDial = (digit: string) => {
-    if (callStatus === 'idle') {
+    if (callState === 'idle') {
       setPhoneNumber((prev) => prev + digit);
     }
   };
 
-  const handleCall = () => {
+  const handleCall = async () => {
     if (!phoneNumber) return;
-    setCallStatus('calling');
-    setTimeout(() => {
-      setCallStatus('connected');
-      // Start timer
-      let duration = 0;
-      const interval = setInterval(() => {
-        duration++;
-        setCallDuration(duration);
-      }, 1000);
-      // Auto-end after 30 seconds for demo
-      setTimeout(() => {
-        clearInterval(interval);
-        setCallStatus('ended');
-      }, 30000);
-    }, 2000);
+    await makeCall(phoneNumber);
   };
 
   const handleEndCall = () => {
-    setCallStatus('idle');
+    hangup();
     setPhoneNumber('');
-    setCallDuration(0);
   };
 
   const formatDuration = (seconds: number) => {
@@ -56,40 +55,50 @@ export default function SoftphonePage() {
   return (
     <DashboardLayout>
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Softphone</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Softphone</h1>
+          <div className="flex items-center gap-4">
+            {error && <span className="text-red-600 text-sm font-medium">{error}</span>}
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+              <div className={`w-3 h-3 rounded-full ${registerState === 'registered' ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
+              <span className="text-sm font-semibold text-gray-700">
+                {registerState === 'registered' ? `Ext: ${sipUsername} (Online)` : 'Offline'}
+              </span>
+            </div>
+            {status === 'disconnected' ? (
+              <button onClick={connect} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Connect PBX</button>
+            ) : (
+              <button onClick={disconnect} className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium transition">Disconnect</button>
+            )}
+          </div>
+        </div>
 
         <div className="max-w-md mx-auto">
           {/* Call Display */}
           <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
             <div className="text-center mb-6">
               <div className="mb-4 flex justify-center">
-                {callStatus === 'idle' && <HiPhone className="w-16 h-16 text-indigo-600" />}
-                {callStatus === 'calling' && (
+                {callState === 'idle' && <HiPhone className="w-16 h-16 text-indigo-600" />}
+                {callState === 'calling' && (
                   <HiPhoneIncoming className="w-16 h-16 text-indigo-600 animate-pulse" />
                 )}
-                {callStatus === 'connected' && (
+                {callState === 'connected' && (
                   <HiCheckCircle className="w-16 h-16 text-green-600" />
-                )}
-                {callStatus === 'ended' && (
-                  <HiPhoneMissedCall className="w-16 h-16 text-gray-400" />
                 )}
               </div>
               <div className="text-2xl font-mono font-semibold text-gray-900 mb-2">
                 {phoneNumber || 'Enter number'}
               </div>
-              {callStatus === 'connected' && (
+              {callState === 'connected' && (
                 <div className="text-lg text-gray-600">{formatDuration(callDuration)}</div>
               )}
-              {callStatus === 'calling' && (
+              {callState === 'calling' && (
                 <div className="text-lg text-indigo-600 animate-pulse">Calling...</div>
-              )}
-              {callStatus === 'ended' && (
-                <div className="text-lg text-gray-500">Call ended</div>
               )}
             </div>
 
             {/* Dial Pad */}
-            {callStatus === 'idle' && (
+            {callState === 'idle' && (
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, '*', 0, '#'].map((digit) => (
                   <button
@@ -105,7 +114,7 @@ export default function SoftphonePage() {
 
             {/* Call Controls */}
             <div className="flex gap-4 justify-center">
-              {callStatus === 'idle' && (
+              {callState === 'idle' && (
                 <button
                   onClick={handleCall}
                   disabled={!phoneNumber}
@@ -115,7 +124,7 @@ export default function SoftphonePage() {
                   <span>Call</span>
                 </button>
               )}
-              {(callStatus === 'calling' || callStatus === 'connected') && (
+              {(callState === 'calling' || callState === 'connected') && (
                 <button
                   onClick={handleEndCall}
                   className="flex-1 bg-red-600 text-white py-4 rounded-lg font-semibold hover:bg-red-700 transition flex items-center justify-center gap-2"
@@ -124,15 +133,7 @@ export default function SoftphonePage() {
                   <span>End Call</span>
                 </button>
               )}
-              {callStatus === 'ended' && (
-                <button
-                  onClick={handleEndCall}
-                  className="flex-1 bg-indigo-600 text-white py-4 rounded-lg font-semibold hover:bg-indigo-700 transition"
-                >
-                  New Call
-                </button>
-              )}
-              {callStatus === 'idle' && phoneNumber && (
+              {callState === 'idle' && phoneNumber && (
                 <button
                   onClick={() => setPhoneNumber('')}
                   className="px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"

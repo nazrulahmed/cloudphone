@@ -8,7 +8,9 @@ import { HiQuestionMarkCircle } from 'react-icons/hi';
 export default function SupportPage() {
   const tickets = storage.getSupportTickets();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [newTicket, setNewTicket] = useState({ subject: '', description: '' });
+
 
   const handleCreateTicket = () => {
     if (!newTicket.subject.trim() || !newTicket.description.trim()) {
@@ -19,9 +21,11 @@ export default function SupportPage() {
     const ticket = {
       id: `ticket-${Date.now()}`,
       subject: newTicket.subject,
+      description: newTicket.description,
       status: 'open' as const,
       createdAt: new Date().toISOString(),
     };
+
 
     storage.setSupportTickets([...tickets, ticket]);
     setNewTicket({ subject: '', description: '' });
@@ -37,9 +41,8 @@ export default function SupportPage() {
     };
     return (
       <span
-        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-          styles[status as keyof typeof styles] || styles.open
-        }`}
+        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${styles[status as keyof typeof styles] || styles.open
+          }`}
       >
         {status}
       </span>
@@ -160,15 +163,70 @@ export default function SupportPage() {
                       {new Date(ticket.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-indigo-600 hover:text-indigo-900">View</button>
+                      <button
+                        onClick={() => setSelectedTicket(ticket)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        View
+                      </button>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
+        {/* Ticket Details Modal */}
+        {selectedTicket && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Ticket Details</h2>
+                <button
+                  onClick={() => setSelectedTicket(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Subject</h3>
+                    <p className="mt-1 text-lg font-semibold text-gray-900">{selectedTicket.subject}</p>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Status</h3>
+                    <div className="mt-1">{getStatusBadge(selectedTicket.status)}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">Description</h3>
+                  <div className="mt-2 p-4 bg-gray-50 rounded-lg text-gray-700 whitespace-pre-wrap">
+                    {selectedTicket.description}
+                  </div>
+                </div>
+
+                <div className="flex justify-between text-sm text-gray-500 pt-4 border-t border-gray-100">
+                  <div>Ticket ID: <span className="font-mono">{selectedTicket.id}</span></div>
+                  <div>Created: {new Date(selectedTicket.createdAt).toLocaleString()}</div>
+                </div>
+              </div>
+              <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-end">
+                <button
+                  onClick={() => setSelectedTicket(null)}
+                  className="bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
     </DashboardLayout>
   );
 }

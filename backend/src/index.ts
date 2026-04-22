@@ -17,10 +17,18 @@ initDb().catch(console.error);
 
 import authRoutes from './routes/auth.js';
 import numbersRoutes from './routes/numbers.js';
+import webhookRoutes from './routes/webhooks.js';
+import onboardingRoutes from './routes/onboarding.js';
+import path from 'path';
+
+// Serve uploaded KYC documents statically
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/numbers', numbersRoutes);
+app.use('/api/webhooks', webhookRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 
 // Basic health check

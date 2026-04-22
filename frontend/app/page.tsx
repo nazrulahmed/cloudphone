@@ -11,7 +11,7 @@ export default function LandingPage() {
         <nav className="flex items-center justify-between">
           <div className="text-2xl font-bold text-indigo-600">CloudPhone</div>
           <div className="space-x-4">
-            <Link href="/dashboard" className="text-gray-700 hover:text-indigo-600">
+            <Link href="/login" className="text-gray-700 hover:text-indigo-600">
               Login
             </Link>
             <Link href="/signup" className="text-gray-700 hover:text-indigo-600">

@@ -1,18 +1,19 @@
-import { query } from '../config/db.js';
+import { query, getClient } from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export const register = async (req: any, res: any) => {
     const { company, email, password } = req.body;
+    const client = await getClient();
 
     try {
         // Start transaction
-        await query('BEGIN');
+        await client.query('BEGIN');
 
         // 1. Create Tenant
-        const tenantResult = await query(
+        const tenantResult = await client.query(
             'INSERT INTO tenants (company, country) VALUES ($1, $2) RETURNING id',
-            [company, 'UK'] // Defaulting to UK as per prototype
+            [company, 'UK']
         );
         const tenantId = tenantResult.rows[0].id;
 
@@ -21,13 +22,13 @@ export const register = async (req: any, res: any) => {
         const passwordHash = await bcrypt.hash(password, salt);
 
         // 3. Create User
-        const userResult = await query(
+        const userResult = await client.query(
             'INSERT INTO users (tenant_id, email, password_hash) VALUES ($1, $2, $3) RETURNING id, email, role',
             [tenantId, email, passwordHash]
         );
         const user = userResult.rows[0];
 
-        await query('COMMIT');
+        await client.query('COMMIT');
 
         // 4. Generate Token
         const token = jwt.sign(
@@ -45,11 +46,14 @@ export const register = async (req: any, res: any) => {
             }
         });
     } catch (error: any) {
-        await query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error('Registration error:', error);
         res.status(500).json({ error: error.message || 'Error creating account' });
+    } finally {
+        client.release();
     }
 };
+
 
 export const login = async (req: any, res: any) => {
     const { email, password } = req.body;

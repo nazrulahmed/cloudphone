@@ -9,12 +9,13 @@ export default function LogoutPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Clear all localStorage
+    // Clear all localStorage including JWT token
     storage.clearAll();
-    
-    // Redirect to landing page
+    localStorage.removeItem('auth_token');
+
+    // Redirect to login page
     setTimeout(() => {
-      router.push('/');
+      router.push('/login');
     }, 1000);
   }, [router]);
 

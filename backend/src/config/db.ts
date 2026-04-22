@@ -7,8 +7,12 @@ const { Pool } = pg;
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
+    // Add a connection timeout
+    connectionTimeoutMillis: 5000,
 });
 
 export const query = (text: string, params?: any[]) => pool.query(text, params);
+export const getClient = () => pool.connect();
 
 export default pool;
+

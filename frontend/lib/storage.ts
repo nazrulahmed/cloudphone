@@ -42,9 +42,11 @@ export interface UsageStats {
 export interface SupportTicket {
   id: string;
   subject: string;
+  description: string;
   status: 'open' | 'in-progress' | 'resolved';
   createdAt: string;
 }
+
 
 const STORAGE_KEYS = {
   tenant: 'tenant',

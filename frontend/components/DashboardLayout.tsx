@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { storage } from '@/lib/storage';
+import { SoftphoneProvider } from '@/contexts/SoftphoneContext';
 import {
   HiHome,
   HiPhone,
@@ -12,6 +13,7 @@ import {
   HiChartBar,
   HiCreditCard,
   HiQuestionMarkCircle,
+  HiUserGroup,
 } from 'react-icons/hi';
 
 interface DashboardLayoutProps {
@@ -22,14 +24,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  /* 
   useEffect(() => {
-    const tenant = storage.getTenant();
-    if (!tenant || tenant.status !== 'active') {
-      router.push('/signup');
+    const token = localStorage.getItem('auth_token');
+    const user = storage.getUser();
+    if (!token || !user) {
+      router.push('/login');
     }
   }, [router]);
-  */
 
   const tenant = storage.getTenant();
   const user = storage.getUser();
@@ -37,10 +38,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: HiHome },
+    { href: '/dashboard/teams', label: 'Teams', icon: HiUserGroup },
     { href: '/dashboard/softphone', label: 'Softphone', icon: HiPhone },
     { href: '/dashboard/numbers', label: 'Numbers', icon: HiHashtag },
     { href: '/dashboard/call-flows', label: 'Call Flows', icon: HiRefresh },
+    { href: '/dashboard/reports', label: 'Call Logs', icon: HiChartBar },
     { href: '/dashboard/analytics', label: 'Analytics', icon: HiChartBar },
+    { href: '/dashboard/compliance', label: 'Compliance', icon: HiQuestionMarkCircle },
     { href: '/dashboard/billing', label: 'Billing', icon: HiCreditCard },
     { href: '/dashboard/support', label: 'Support', icon: HiQuestionMarkCircle },
   ];
@@ -62,8 +66,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive
-                    ? 'bg-indigo-50 text-indigo-600 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-indigo-50 text-indigo-600 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-100'
                   }`}
               >
                 <item.icon className="w-5 h-5" />

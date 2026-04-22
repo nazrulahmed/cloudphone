@@ -1,0 +1,16 @@
+# Backend
+backend/.env
+backend/.env.*
+backend/node_modules/
+backend/dist/
+backend/uploads/
+
+# Frontend (already has its own, but root level is good for safety)
+frontend/.env
+frontend/.env.*
+frontend/node_modules/
+frontend/.next/
+
+# Misc
+.DS_Store
+*.log
